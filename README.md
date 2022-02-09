@@ -89,6 +89,234 @@ eureka:
       defaultZone: http://127.0.0.1:8761/eureka   # Eureka클라이언트를 등록할 Eureka서버의 주소
 ```
 
+
+#**Spring Cloud Netflix Ribbon**
+---
+### **Load Balance (로드 밸런스)**
+우리가 일반적으로 사용하는 LoadBalancer는 서버 사이드 로드밸런싱을 처리하는 L4 Switch와 같은 하드웨어 장비였다.\
+하지만 MSA에서는 이런 장비보다는 <u>**소프트웨어적으로 구현된 클라이언트 사이드 로드밸런싱**</u>을 주로 이용한다.\
+서버 사이드 로드밸런서의 단점은 기본적으로 별도의 스위치 장비가 필요하기 때문에 상대적으로 비용이 많이 소모되게 되며 유연성도 떨어지게 된다. 또한 서버 목록의 추가는 수동으로 보통 이루어진다. 이러한 단점 때문에 클라이이언트 사이드 로드밸런서가 MSA에서는 주로 사용된다.
+> **Ribbon**
+
+* Client side Load Balancer
+* 서비스 이름으로 호출
+* Health Check
+* 비동기화 처리가 잘되지 않기 때문에 <u>**최근에는 사용하지 않는다.**</u>
+  (Spring Boot 2.4에서 Maintenance 상태)
+* <u>**Spring Cloud Loadbalancer**</u> 사용 권장
+
+
+1. pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-ribbon</artifactId>
+</dependency>
+```
+
+2. Application.class
+```java
+@SpringBootApplication
+public class DisplayApplication {
+
+    @Bean
+    @LoadBalanced
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(DisplayApplication.class);
+    }
+}
+```
+
+3. application.yml
+```yaml
+product: # 대상 클라이언트 명
+  ribbon:
+    #listOfServers: localhost:8082,localhost:7777 # 작성하지 않으면 Eureka 서버에서 해당 주소를 가져온다.
+    MaxAutoRetries: 0 # 첫 실패시 같은 서버로 재시도 하는 수
+    MaxAutoRetriesNextServer: 1 # 첫 실패시 다음 서버로 재시도 하는 수
+```
+
+
+# **Spring Cloud Netflix Hystrix**
+
+---
+### **Circuit Breaker (서킷 브레이커)**
+MSA는 시스템을 여러 서비스를 컴포넌트로 나누고 각 컴포넌트끼리 서로 호출을 하는 패턴이다.\
+이 패턴의 한계는 서버가 서로 종속적이라는 점이다.\
+즉, Server A가 Server B를 호출 했을때 Server B가 응답을 못하거나 응답 시간이 길어진다면 Server A는 <u>**응답을 계속 기다리게 되는 한계**</u>가 있다.\
+이러한 한계를 극복한 것이 **Circuit Breaker** 패턴이다.
+
+> **Hystrix**
+
+* Thread timeout, 장애 대응 등을 설정해 장애시 정해진 루트를 따르도록 할 수 있다.
+* 미리 정해진 임계치를 넘으면 장애가 있는 로직을 실행하지 않고 우회 하도록 할 수 있다.
+* <u>**최근에는 사용하지 않는다.**</u> (Spring Boot 2.4에서 Maintenance 상태)
+* <u>**Resilience4j**</u> 사용 권장
+
+
+1. pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+</dependency>
+```
+
+2. Application.class
+```java
+@EnableCircuitBreaker
+@SpringBootApplication
+public class DisplayApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DisplayApplication.class);
+    }
+}
+```
+
+3. service.class
+```java
+@Service
+public class ProductRemoteServiceImpl implements ProductRemoteService {
+
+    private static final String url = "http://product/products/";
+    private final RestTemplate restTemplate;
+
+    public ProductRemoteServiceImpl(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @Override
+    @HystrixCommand(commandKey = "productInfo", fallbackMethod = "getProductInfoFallback")
+    public String getProductInfo(String productId) {
+        return this.restTemplate.getForObject(url + productId, String.class);
+    }
+
+    /**
+     * fallback 메소드 서킷이 오픈되거나 실패할 경우 예외처리의 역할을 하는 해당 메소드가 호출이 됨.
+     */
+    public String getProductInfoFallback(String productId, Throwable t) {
+        System.out.println("t = " + t);
+        return "[ this product is sold out ]";
+    }
+}
+```
+
+
+3. application.yml
+```yaml
+hystrix:
+  command:
+    productInfo:    # command key. use 'default' for global setting.
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 1000 # 타임아웃 시간 default 1,000ms
+      circuitBreaker:
+        requestVolumeThreshold: 20   # 서킷 브레이커 활성화를 위한 최소 요청횟수. default 20
+        errorThresholdPercentage: 50 # 서킷 오픈에 대한 오류 백분율. default 50
+```
+
+
+# **Spring Cloud Netflix Zuul**
+---
+###**API Gateway (API 게이트웨이)**
+MSA에서 언급되는 컴포넌트 중 하나이며, 모든 클라이언트 요청에 대한 end point를 통합하는 서버이다.\
+마치 프록시 서버처럼 동작한다. 그리고 인증 및 권한, 모니터링, logging 등 추가적인 기능이 있다.\
+모든 비지니스 로직이 하나의 서버에 존재하는 Monolithic Architecture와 달리 MSA는 도메인별 데이터를 저장하고 도메인별로 하나 이상의 서버가 따로 존재한다.\
+한 서비스에 한개 이상의 서버가 존재하기 때문에 이 서비스를 사용하는 클라이언트
+입장에서는 다수의 end point가 생기게 되며, end point를 변경이 일어났을때, 관리하기가 힘들다.\
+그래서 MSA 환경에서 서비스에 대한 도메인인 하나로 통합할 수 있는 API GATEWAY가 필요한 것이다.
+
+> **Zuul**
+
+* Groovy 언어로 작성된 다양한 형태의 Filter를 실행한다.
+* Filter에 기능을 정의하고, 이슈사항에 발생시 적정한 Filter를 추가함으로써 이슈사항을 대비할 수 있다.
+* Spring Librarie와의 호환성 문제로 <u>**최근에는 사용하지 않는다.**</u> (Spring Boot 2.4에서 Maintenance 상태)
+* <u>**Spring Cloud Gateway**</u> 사용 권장
+
+
+1. pom.xml
+```xml
+<!-- 2.4 이상 버전에서는 실행X -->
+<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.3.1.RELEASE</version>
+</parent>
+```
+```xml
+<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-zuul</artifactId>
+			<version>2.2.10.RELEASE</version>
+</dependency>
+```
+
+2. Application.class
+```java
+@EnableZuulProxy
+@SpringBootApplication
+public class ZuulServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ZuulServiceApplication.class, args);
+	}
+}
+```
+
+3. Filter.class
+```java
+@Slf4j
+@Component
+public class ZuulLoggingFilter extends ZuulFilter {
+
+    @Override
+    public Object run() throws ZuulException {  // 실행
+        log.info("*********** printng logs: ");
+
+        RequestContext ctx =RequestContext.getCurrentContext();
+        HttpServletRequest request = ctx.getRequest();
+        log.info("***********" + request.getRequestURI());
+
+        return null;
+    }
+
+    @Override
+    public String filterType() {    // 필터타입 사전 : pre , 경로 : route , 사후 : post , 에러 : error
+        return "pre";
+    }
+
+    @Override
+    public int filterOrder() {  // 필터순서
+        return 1;
+    }
+
+    @Override
+    public boolean shouldFilter() { // 필터사용여부
+        return true;
+    }
+}
+```
+
+4. application.yml
+```yaml
+zuul:
+  routes:
+    first-service:
+      path: /first-service/**
+      url:  http://localhost:8081
+    second-service:
+      path: /second-service/**
+      url:  http://localhost:8082
+```
+
+
+
 # **Zuul vs SCG**
 ---
 ### **Zuul와 Spring Cloud Gateway (SCG)의 차이**
@@ -124,6 +352,145 @@ Gateway Web Handler는 지정된 필터들을 통해 요청을 전송한다. \
 
 Zuul은 Web/WAS로 Tomcat을 사용하고, SCG는 Netty를 사용한다. \
 Netty는 비동기 네트워킹을 지원하는 어플리케이션 프레임워크이다. 
+
+
+# **Spring Cloud Gateway**
+---
+
+\
+1. pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+</dependency>
+```
+
+\
+2. application.yml
+```yaml
+spring:
+  application:
+    name: apigateway-service
+  cloud:
+    gateway:
+      default-filters: # 전체 필터 설정
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
+      routes:
+        - id: first-service
+          uri: http://localhost:8081/
+          predicates:
+            - Path=/first-service/** # 추가 작업이 없을시 Zuul과 다르게 http://localhost:8081/first-service/** 식으로 패스 경로가 붙는다.
+          filters:
+#            - AddRequestHeader=first-request, first-requests-header # 해당 방식으로 Header key , value로 추가 가능
+#            - AddResponseHeader=first-response, first-response-header
+            - CustomFilter # 라우팅 별로 필터 지정할시
+        - id: second-service
+          uri: http://localhost:8082/
+          predicates:
+            - Path=/second-service/**
+          filters:
+#            - AddRequestHeader=second-request, second-requests-header
+#            - AddResponseHeader=second-response, second-response-header
+            - CustomFilter
+```
+
+
+3. route설정 java로 할시
+```java
+@Configuration
+public class FilterConfig {
+    @Bean
+    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
+        return builder.routes()
+                .route(r -> r.path("/first-service/**")
+                            .filters(f -> f.addRequestHeader("first-request","first-request-header")
+                                           .addResponseHeader("first-response","first-response-header"))
+                            .uri("http://localhost:8081"))
+                .route(r -> r.path("/second-service/**")
+                        .filters(f -> f.addRequestHeader("second-request","first-request-header")
+                                .addResponseHeader("first-response","first-response-header"))
+                        .uri("http://localhost:8081"))
+                .build();
+    }
+}
+```
+
+
+4. CustomFilter.class
+```java
+@Slf4j
+@Component
+public class CustomFilter extends AbstractGatewayFilterFactory<CustomFilter.Config> {
+    public CustomFilter(){
+        super(Config.class);
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        // Custom Pre Filter
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+            ServerHttpResponse response = exchange.getResponse();
+
+            log.info("Custom PRE filter: request id -> {}", request.getId());
+
+            // Custom Post Filter
+            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                log.info("Custom POST filter: response code -> {}", response.getStatusCode());
+            }));
+        };
+    }
+
+    public static class Config{
+        // Put the configuration properties
+    }
+}
+```
+
+
+5. GlobalFilter.class
+```java
+@Slf4j
+@Component
+public class GlobalFilter extends AbstractGatewayFilterFactory<GlobalFilter.Config> {
+    public GlobalFilter(){
+        super(Config.class);
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        // Custom Pre Filter
+        return (exchange, chain) -> {
+            ServerHttpRequest request = exchange.getRequest();
+            ServerHttpResponse response = exchange.getResponse();
+
+            log.info("Global Filter baseMessage: {}", config.getBaseMessage());
+
+            if (config.isPreLogger()){
+                log.info("Global Filter Start: request id -> {}", request.getId());
+            }
+            // Custom Post Filter
+            return chain.filter(exchange).then(Mono.fromRunnable(() -> {
+                if (config.isPostLogger()){
+                    log.info("Global Filter End: request code -> {}", response.getStatusCode());
+                }
+            }));
+        };
+    }
+
+    @Data
+    public static class Config{
+        private String baseMessage;
+        private boolean preLogger;
+        private boolean postLogger;
+    }
+}
+```
 
 
 # **Spring Cloud Config Server**
