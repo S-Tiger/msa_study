@@ -90,7 +90,7 @@ eureka:
 ```
 
 
-#**Spring Cloud Netflix Ribbon**
+# **Spring Cloud Netflix Ribbon**
 ---
 ### **Load Balance (로드 밸런스)**
 우리가 일반적으로 사용하는 LoadBalancer는 서버 사이드 로드밸런싱을 처리하는 L4 Switch와 같은 하드웨어 장비였다.\
