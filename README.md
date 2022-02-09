@@ -90,6 +90,8 @@ eureka:
 ```
 
 
+
+
 # **Spring Cloud Netflix Ribbon**
 ---
 ### **Load Balance (로드 밸런스)**
@@ -317,6 +319,8 @@ zuul:
 
 
 
+
+
 # **Zuul vs SCG**
 ---
 ### **Zuul와 Spring Cloud Gateway (SCG)의 차이**
@@ -354,10 +358,11 @@ Zuul은 Web/WAS로 Tomcat을 사용하고, SCG는 Netty를 사용한다. \
 Netty는 비동기 네트워킹을 지원하는 어플리케이션 프레임워크이다. 
 
 
+
+
 # **Spring Cloud Gateway**
 ---
 
-\
 1. pom.xml
 ```xml
 <dependency>
@@ -366,7 +371,7 @@ Netty는 비동기 네트워킹을 지원하는 어플리케이션 프레임워�
 </dependency>
 ```
 
-\
+
 2. application.yml
 ```yaml
 spring:
@@ -491,6 +496,8 @@ public class GlobalFilter extends AbstractGatewayFilterFactory<GlobalFilter.Conf
     }
 }
 ```
+
+
 
 
 # **Spring Cloud Config Server**
