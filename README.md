@@ -224,7 +224,7 @@ hystrix:
 
 # **Spring Cloud Netflix Zuul**
 ---
-###**API Gateway (API 게이트웨이)**
+### **API Gateway (API 게이트웨이)**
 MSA에서 언급되는 컴포넌트 중 하나이며, 모든 클라이언트 요청에 대한 end point를 통합하는 서버이다.\
 마치 프록시 서버처럼 동작한다. 그리고 인증 및 권한, 모니터링, logging 등 추가적인 기능이 있다.\
 모든 비지니스 로직이 하나의 서버에 존재하는 Monolithic Architecture와 달리 MSA는 도메인별 데이터를 저장하고 도메인별로 하나 이상의 서버가 따로 존재한다.\
