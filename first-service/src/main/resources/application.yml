@@ -1,0 +1,21 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: my-first-service
+
+eureka:
+  client:
+    registry-fetch-interval-seconds: 10 # 서비스 목록을 설정한 시간마다 캐싱 (디폴트 30초)
+    disable-delta: true # 캐싱 시 변경된 부분만 업데이트할 지 여부 (디폴트 false) false 로 설정 서 대역폭 낭비이므로 true 로 설정할 것
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+  instance:
+    lease-renewal-interval-in-seconds: 3 # Eureka Server 로 설정된 시간(second)마다 하트비트 전송 (디폴트 30초)
+    lease-expiration-duration-in-seconds: 10 # 디스커버리는 서비스 등록 해제 하기 전에 마지막 하트비트에서부터 설정된 시간(second) 동안 하트비트가 수신되지 않으면 서비스 등록 해제 (디폴트 90초)
+                                             # 단, 유레카 인스턴스가 정상적으로 종료된 경우는 레지스트리에서 바로 제거
+                                             # 이 값은 lease-renewal-interval-in-seconds 보다 커야 함
+#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}} 랜덤포트 사용시 Eureka서버는 0번포트로 등록하기 때문에 추가 기입
