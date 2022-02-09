@@ -40,11 +40,11 @@ public class DiscoveryserviceApplication {
 3. application.yml
 ```yaml
 server:
-    port: 8761 # Eureka server 대부분 8761 사용
+  port: 8761 # Eureka server 대부분 8761 사용
 eureka:  
-    client:  
-      register-with-eureka: false # Eureka 서버에 등록한다. 서버자체는 등록 불필요 default ture
-      fetch-registry: false # Eureka 서버로 부터 인스턴스들의 정보를 주기적으로 가져올 것 인지 설정하는 속성 default true
+  client:  
+    register-with-eureka: false # Eureka 서버에 등록한다. 서버자체는 등록 불필요 default ture
+    fetch-registry: false # Eureka 서버로 부터 인스턴스들의 정보를 주기적으로 가져올 것 인지 설정하는 속성 default true
 ```
 
 
@@ -79,14 +79,14 @@ public class ProductApplication {
 3. application.yml
 ```yaml
 spring:
-     application:
-       name: product # 해당 애플리케이션명으로 Eureka 서버에 등록된다.
+  application:
+    name: product # 해당 애플리케이션명으로 Eureka 서버에 등록된다.
 eureka:
-     client:
-       register-with-eureka: true   # Eureka 서버에 등록한다 default ture
-       fetch-registry: true  # Eureka 서버로 부터 인스턴스들의 정보를 주기적으로 가져올 것 인지 설정하는 속성 default true
-       service-url:
-         defaultZone: http://127.0.0.1:8761/eureka   # Eureka클라이언트를 등록할 Eureka서버의 주소
+  client:
+    register-with-eureka: true   # Eureka 서버에 등록한다 default ture
+    fetch-registry: true  # Eureka 서버로 부터 인스턴스들의 정보를 주기적으로 가져올 것 인지 설정하는 속성 default true
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka   # Eureka클라이언트를 등록할 Eureka서버의 주소
 ```
 
 # **Zuul vs SCG**
@@ -124,3 +124,48 @@ Gateway Web Handler는 지정된 필터들을 통해 요청을 전송한다. \
 
 Zuul은 Web/WAS로 Tomcat을 사용하고, SCG는 Netty를 사용한다. \
 Netty는 비동기 네트워킹을 지원하는 어플리케이션 프레임워크이다. 
+
+
+# **Spring Cloud Config Server**
+---
+### **Spring Config Server**
+Spring Config Server는 각 애플리케이션에의 Config 설정을 중앙 서버에서 관리를 하는 서비스이다. \
+중앙 저장소로 Git Repository뿐만 아니라 JDBC, REDIS, AWS, ... 으로도 사용 가능하다. \
+Spring Config Server를 이용하면 /actuator/refresh, /actuator/busrefresh 를 통해 \
+<u>**서버를 재배포 없이 설정값을 변경할 수 있다는 큰 장점이 있다.**</u>
+
+1.  pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+```
+
+2. Application.class
+```java
+@EnableConfigServer  
+@SpringBootApplication  
+public class DiscoveryserviceApplication {  
+    public static void main(String[] args) {
+        SpringApplication.run(DiscoveryserviceApplication.class, args);
+    }
+}
+```
+
+3. application.yml
+```yaml
+server:
+  port: 8888
+  
+spring:
+  application:
+    name: config-service
+  cloud:
+    config:
+      server:
+        git:
+          uri: 
+          username: 
+          password: 
+```
