@@ -543,3 +543,87 @@ spring:
           username: 
           password: 
 ```
+
+
+# **Spring Cloud Bus**
+---
+### **Spring Config Server**
+Spring Config Server는 각 애플리케이션에의 Config 설정을 중앙 서버에서 관리를 하는 서비스이다. \
+중앙 저장소로 Git Repository뿐만 아니라 JDBC, REDIS, AWS, ... 으로도 사용 가능하다. \
+Spring Config Server를 이용하면 /actuator/refresh, /actuator/busrefresh 를 통해 \
+<u>**서버를 재배포 없이 설정값을 변경할 수 있다는 큰 장점이 있다.**</u>
+
+1.  pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+2. Application.class
+```java
+@EnableConfigServer  
+@SpringBootApplication  
+public class DiscoveryserviceApplication {  
+    public static void main(String[] args) {
+        SpringApplication.run(DiscoveryserviceApplication.class, args);
+    }
+}
+```
+
+3. application.yml
+```yaml
+server:
+  port: 8888
+  
+spring:
+  application:
+    name: config-service
+  cloud:
+    config:
+      server:
+        git:
+          uri: 
+          username: 
+          password: 
+```
+
+
+# **Spring Cloud Bus**
+---
+1. 분산 시스템의 노드를 경량 메시지 브로커와 연결
+2. 상태 및 구성에 대한 변경 사항을 연결된 노드에게 전달(Broadcast)
+
+
+
+*   AMOP(Advanced Message Queuing Protocol), 메시지 지향 미들웨어를 쥐한 개방형 표준 응용 계층 프로토콜
+
+ - 메시지 지향, 큐잉, 라우팅 (P2P, Publisher-Subcriber), 신뢰성, 보안
+ - Erlang, RabbitMQ에서 사용
+
+*   Kafka 프로젝트
+
+ - Apache Software Foundation이 Scalar언어로 개발한 오픈 소스 메시지 브로커 프로젝트
+ - 분산형 스트리밍 플랫폼
+ - 대용량의 데이터를 처리 가능한 메시징 시스템
+
+
+* RabbitMQ
+
+ - 메시지 브로커
+ - 초당 20+ 메시지를 소비자에게 전달
+ - 메시지 전달 보장, 시스템 간 메시지 전달
+ - 브로커, 소비자 중심
+
+
+* Kafka
+
+ - 초당 100k+ 이상의 이벤트 처리
+ - Pub/Sub, Topic에 메시지 전달
+ - Ack를 기다리지 않고 전달 가능
+ - 생산자 중심
