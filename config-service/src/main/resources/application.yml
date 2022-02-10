@@ -4,10 +4,25 @@ server:
 spring:
   application:
     name: config-service
+#  profiles:
+#    active: native
   cloud:
     config:
       server:
+#        native:
+#          search-locations: file:///${user.home}/Desktop/spring-config
         git:
           uri: https://github.com/S-Tiger/spring_config.git
           username: S-Tiger
-          password:
+          password: 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
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, busrefresh
