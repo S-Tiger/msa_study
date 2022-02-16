@@ -627,3 +627,71 @@ spring:
  - Pub/Sub, Topic에 메시지 전달
  - Ack를 기다리지 않고 전달 가능
  - 생산자 중심
+
+
+# **Spring Cloud Netflix Feign Client**
+
+
+* FeignClient -> HTTP Client
+  - REST Call을 추상화 한 Spring Cloud Netflix 라이브러리
+* 사용방법
+  - 호출하려는 HTTP Endpoint에 대한 Interface를 생성
+  - @FeignClient 선언
+* Load balanced 지원
+
+
+1.  pom.xml
+```xml
+<dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
+
+2. Application.class
+```java
+@EnableFeignClients
+@EnableDiscoveryClient
+@SpringBootApplication  
+public class UserserviceApplication {  
+    public static void main(String[] args) {
+        SpringApplication.run(UserserviceApplication.class, args);
+    }
+}
+```
+
+3. FeignClient.interface
+```java
+@FeignClient(name="order-service")
+public interface OrderServiceClient {
+
+    @GetMapping("/order-service/{userId}/orders")
+    List<ResponseOrder> getOrders(@PathVariable String userId);
+}
+```
+
+* Feign Client에서 로그 사용
+
+1. application.yml
+```yml
+logging:
+  level:
+    com.example.userservice.client: DEBUG
+```
+
+2. Application.class
+```java
+@EnableFeignClients
+@EnableDiscoveryClient
+@SpringBootApplication  
+public class UserserviceApplication {  
+    public static void main(String[] args) {
+        SpringApplication.run(UserserviceApplication.class, args);
+    }
+
+    @Bean
+    public Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+}
+```
