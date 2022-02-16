@@ -14,7 +14,7 @@ spring:
         git:
           uri: https://github.com/S-Tiger/spring_config.git
           username: S-Tiger
-          password:
+          password: '{cipher}a33c87d15e128d04856985b88ac61a55ab837cd5f9d0b2b3934b5e458d72d499dab72131bb63801185bdfa3d3d24f6ea9306421e10be018bc8d6bf52f2c1b303'
   rabbitmq:
     host: 127.0.0.1
     port: 5672
