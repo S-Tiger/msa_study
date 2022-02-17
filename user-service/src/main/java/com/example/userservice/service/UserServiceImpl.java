@@ -3,9 +3,12 @@ package com.example.userservice.service;
 import com.example.userservice.client.OrderServiceClient;
 import com.example.userservice.dto.UserDto;
 import com.example.userservice.entity.UserEntity;
+import com.example.userservice.error.FeignErrorDecoder;
 import com.example.userservice.repository.UserRepository;
 import com.example.userservice.vo.ResponseOrder;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.core.env.Environment;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService{
@@ -26,9 +30,8 @@ public class UserServiceImpl implements UserService{
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final Environment env;
-    private final OrderServiceClient orderServiceClient;
 //    private final RestTemplate restTemplate;
-
+    private final OrderServiceClient orderServiceClient;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -75,6 +78,15 @@ public class UserServiceImpl implements UserService{
 //
 //        List<ResponseOrder> orderList = orderListResponse.getBody();
 
+        /* Feign exception handling */
+//        List<ResponseOrder> orderList = null;
+//        try {
+//            orderServiceClient.getOrders(userId);
+//        } catch (FeignException ex){
+//            log.error(ex.getMessage());
+//        }
+
+        /* ErrorDecoder */
         List<ResponseOrder> orderList = orderServiceClient.getOrders(userId);
 
         userDto.setOrders(orderList);
