@@ -695,3 +695,124 @@ public class UserserviceApplication {
     }
 }
 ```
+
+
+3. ServiceMethod
+```java
+try {
+            orderServiceClient.getOrders(userId);
+} catch (FeignException ex){
+            log.error(ex.getMessage());
+}
+```
+<br/>
+
+* FeignErrorDecoder
+
+<br/>
+
+1. FeignErrorDecoder.class
+```java
+@Component
+@RequiredArgsConstructor
+public class FeignErrorDecoder implements ErrorDecoder {
+
+    private final Environment env;
+
+    @Override
+    public Exception decode(String methodKey, Response response) {
+        switch (response.status()){
+            case 400:
+                break;
+            case 404:
+                if (methodKey.contains("getOrders")) {
+                    return new ResponseStatusException(HttpStatus.valueOf(response.status()),
+                             env.getProperty("order_service.exception.orders_is_empty"));
+                }
+                break;
+            default:
+                return new Exception(response.reason());
+        }
+        return null;
+    }
+}
+```
+
+
+
+# **Apache Kafka**
+<br/>
+
+* Apache Software Foundation의 Scalar 언어로 된 오픈 소스 메시지 브로커 프로젝트
+  - Open Source Message Broker Project
+
+* 링크드인(Linked-in)에서 개발, 2011년 오픈 소스화
+  - 2014년 11월 링크드인에서 Kafka를 개발하던 엔지니어들이 Kafka개발에 집중하기 위해 Confluent라는 회사 창립
+
+* 실시간 데이터 피드를 관리하기 위해 통일된 높은 처리량, 낮은 지연 시간을 지닌 플랫폼 제공
+
+* Apple, Netflix, Shopify, Yelp, Kakao, New York Times 등이 사용
+<br/>
+
+1. Producer/Consumer 분리
+2. 메세지를 여러 Consumer에게 허용
+3. 높은 처리량을 위한 메시지 최적화
+4. Scale-out 기능
+5. Eco-system
+<br/>
+
+
+> **Kafaka Broker**
+
+* 실행 된 Kafka 애플리케이션 서버
+* 3대 이상의 Broker Cluster 구성
+* Zookeeper 연동
+  - 역할: 메타데이터 (Broker ID, Controller ID 등) 저장
+  - Controller 정보 저장
+* n개 Broker 중 1대는 Controller 기능 수행
+  - Controller 역할
+    - 각 Broker에게 담당 파티션 할당 수행
+    - Broker 정상 동작 모니터링 관리
+<br/>
+
+> **KafkaClient**
+
+* Kafka와 데이터를 주고받기 위해 사용하는 Java Library
+  - https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients
+* Producer, Consumer, Admin, Stream 등 Kafka관련 API 제공
+* 다양한 3rd party library 존재: C/C++, Node.js, Python, .NET 등
+  - https://cwiki.apache.org/confluence/display/KAFKA/Clients
+
+* Kafka 서버 기동
+
+  * Zookeeper 및 Kafka 서버 구동
+    - \$KAFKA_HOME/bin/zookeeper-server-start.sh  \$KAFKA_HOME/config/zookeeper.properties
+    - \$KAFKA_HOME/bin/kafka-server-start.sh  \$KAFKA_HOME/config/server.properties
+  * Topic 생성
+    - \$KAFKA_HOME/bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092 --partitions 1
+  * Topic 목록 확인
+    - \$KAFKA_HOME/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+  * Topic 정보 확인
+    - \$KAFKA_HOME/bin/kafka-topics.sh --describe --topic quickstart-events --bootstrap-server localhost:9092
+
+* Kafka Producer/Consumer 테스트
+
+  * 메시지 생산
+
+    - \$KAFKA_HOME/bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events
+
+  * 메시지 소비
+
+    - \$KAFKA_HOME/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic quickstart-events -from-beginning
+<br/>
+
+> **Kafka Connect**
+
+* Kafka Connect를 통해 Data를 Import/Export 가능
+* 코드 없이 Configuration으로 데이터를 이동
+* Standalone mode, Distribution mode 지원
+  - RESTful API 통해 지원
+  - Stream 또는 Batch 형태로 데이터 전송 가능
+  - 커스텀 Connector를 통한 다양한 Plugin 제공 (File,S3,Hive,Mysql,etc...)
+* 가져오는 쪽을 Kafka Connect Source 보내는 쪽을 Kafka Connect Sink라 칭함
+  - Source System -> Kafka Connect Source -> Kafka Cluster -> Kafka Connect Sink -> Target System
