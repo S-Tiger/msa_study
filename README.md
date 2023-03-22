@@ -816,3 +816,45 @@ public class FeignErrorDecoder implements ErrorDecoder {
   - 커스텀 Connector를 통한 다양한 Plugin 제공 (File,S3,Hive,Mysql,etc...)
 * 가져오는 쪽을 Kafka Connect Source 보내는 쪽을 Kafka Connect Sink라 칭함
   - Source System -> Kafka Connect Source -> Kafka Cluster -> Kafka Connect Sink -> Target System
+* Kafka Connect 구동
+  
+  - \$KAFKA_CONNECT_HOME/bin/connect-distributed \$KAFKA_CONNECT_HOME/etc/kafka/connect-distributed.properties
+* Kafka Source Connect 사용
+```java
+echo'
+{
+    "name" : "my-source-connect", ## 커넥터명
+    "config" : {
+        "connector.class" : "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "connection.url":"jdbc:mysql://localhost:3306/db", 
+        "connection.user":"",
+        "connection.password":"",
+        "mode": "incrementing", ## 자동증가모드
+        "incrementing.column.name" : "", ## 자동증가 컬럼
+        "table.whitelist":"", ## 변경감지할 테이블
+        "topic.prefix" : "", ## 저장할토픽명 prefix_테이블
+        "tasks.max" : "1"
+    }
+}
+' | curl -X POST -d @- http://localhost:8083/connectors --header "content-Type:application/json"
+```
+ * Kafka Source Connect 사용
+ ```java
+echo'
+{
+    "name" : "my-sink-connect", ## 커넥터명
+    "config" : {
+        "connector.class" : "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "connection.url":"jdbc:mysql://localhost:3306/db", 
+        "connection.user":"",
+        "connection.password":"",
+        "auto.create":"", ##디비에 해당 토픽과 같은 이름의 테이블 생성(true/false)
+	"auto.evolve":"true",
+	"delete.enabled":"false",
+	"tasks.max":"1",
+	"topics":"" ## 토픽의 이름
+    }
+}
+' | curl -X POST -d @- http://localhost:8083/connectors --header "content-Type:application/json"
+```
+
