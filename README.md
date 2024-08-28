@@ -832,7 +832,7 @@ echo'
         "mode": "incrementing", ## 자동증가모드
         "incrementing.column.name" : "", ## 자동증가 컬럼
         "table.whitelist":"", ## 변경감지할 테이블
-        "topic.prefix" : "", ## 저장할토픽명 prefix_테이블
+        "topic.prefix" : "", ## 저장할토픽명 prefix_테이블 
         "tasks.max" : "1"
     }
 }
